@@ -13,6 +13,23 @@ def strfobj(arg):
     else:
         return strfobj(arg[0])
 
+# style vars
+f_s, f_e     = None, None # default format
+hl_s, hl_e   = None, None # highlight
+und_s, und_e = None, None # underline
+
+def prettyartist(arg):
+    if type(arg) != list:
+        return str(arg)
+    else:
+        res = ""
+        for i in range(len(arg) - 1):
+            if i != 0:
+                res += hl_e + ", " + hl_s
+            res += arg[i]
+        res += hl_e + ' and ' + hl_s + arg[-1]
+        return res
+
 def main():
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('-h', '--host', default='localhost', dest='host')
@@ -66,9 +83,7 @@ def main():
         # nothing playing right now
         sys.exit(0)
 
-    f_s, f_e = None, None
-    hl_s, hl_e = None, None
-    und_s, und_e = None, None
+    # fill in style vars depending on output
     if xuncolored:
         f_s, f_e = "", ""
         hl_s, hl_e = "", ""
@@ -81,23 +96,24 @@ def main():
         f_s, f_e = "\00310", ""
         hl_s, hl_e = "\017", "\00310"
         und_s, und_e = "\017\037", "\017\00310"
+
     #fsong = f_s + "♪⟪ "
     fsong = f_s + "♪ "
     if 'title' in csong:
         fsong += "\"%s%s%s\"" % (hl_s, csong['title'], hl_e)
         if 'album' in csong:
             if ('artist' in csong) and (('albumartist' not in csong) or (csong['artist'] != csong['albumartist'])):
-                fsong += " by %s%s%s" % (hl_s, csong['artist'], hl_e)
+                fsong += " by %s%s%s" % (hl_s, prettyartist(csong['artist']), hl_e)
             fsong += " on %s%s%s" % (und_s, csong['album'], und_e)
             if 'date' in csong:
                 fsong += " %s(%s)%s" % (hl_s, strfobj(csong['date']), hl_e)
             if 'albumartist' in csong:
-                fsong += " by %s%s%s" % (hl_s, csong['albumartist'], hl_e)
+                fsong += " by %s%s%s" % (hl_s, prettyartist(csong['albumartist']), hl_e)
         else:
             if 'date' in csong:
                 fsong += " %s(%s)%s" % (hl_s, strfobj(csong['date']), hl_e)
             if 'artist' in csong:
-                fsong += " by %s%s%s" % (hl_s, csong['artist'], hl_e)
+                fsong += " by %s%s%s" % (hl_s, prettyartist(csong['artist']), hl_e)
     else:
         fname = csong['file']
         sindex = fname.rfind('/')
