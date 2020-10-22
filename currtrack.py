@@ -2,7 +2,7 @@
 import sys
 import argparse
 import socket
-from mpd import MPDClient
+from mpd import MPDClient # python-mpd2
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
