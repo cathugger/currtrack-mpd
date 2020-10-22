@@ -13,22 +13,31 @@ def strfobj(arg):
     else:
         return strfobj(arg[0])
 
-# style vars
-f_s, f_e     = None, None # default format
-hl_s, hl_e   = None, None # highlight
-und_s, und_e = None, None # underline
+class Style:
+    # default format
+    f_s: str
+    f_e: str
+    # highlight
+    hl_s: str
+    hl_e: str
+    # underline
+    und_s: str
+    und_e: str
 
-def prettyartist(arg):
+def prettyartist(st: Style, arg):
     if type(arg) != list:
-        return str(arg)
+        return st.hl_s + str(arg) + st.hl_e
     else:
-        res = ""
+        res = st.hl_s
         for i in range(len(arg) - 1):
             if i != 0:
-                res += hl_e + ", " + hl_s
+                res += st.hl_e + ", " + st.hl_s
             res += arg[i]
-        res += hl_e + ' and ' + hl_s + arg[-1]
+        res += st.hl_e + ' and ' + st.hl_s + arg[-1] + st.hl_e
         return res
+
+def prettydate(st: Style, arg):
+    return "%s(%s)%s" % (st.hl_s, strfobj(arg), st.hl_e)
 
 def main():
     parser = argparse.ArgumentParser(add_help=False)
@@ -84,47 +93,66 @@ def main():
         sys.exit(0)
 
     # fill in style vars depending on output
+    st = Style()
     if xuncolored:
-        f_s, f_e = "", ""
-        hl_s, hl_e = "", ""
-        und_s, und_e = "\"", "\""
+        # plain ASCII
+        st.f_s,   st.f_e   = '',  ''
+        st.hl_s,  st.hl_e  = '',  ''
+        st.und_s, st.und_e = '"', '"'
     elif not xirc:
-        f_s, f_e = "\033[0;36m", "\033[0m"
-        hl_s, hl_e = "\033[0m", "\033[36m"
-        und_s, und_e = "\033[0;4m", "\033[0;36m"
+        # ANSI
+        st.f_s,   st.f_e   = "\033[0;36m", "\033[0m"
+        st.hl_s,  st.hl_e  = "\033[0m",    "\033[36m"
+        st.und_s, st.und_e = "\033[0;4m",  "\033[0;36m"
     else:
-        f_s, f_e = "\00310", ""
-        hl_s, hl_e = "\017", "\00310"
-        und_s, und_e = "\017\037", "\017\00310"
+        # IRC
+        st.f_s,   st.f_e   = "\00310",   ""
+        st.hl_s,  st.hl_e  = "\017",     "\00310"
+        st.und_s, st.und_e = "\017\037", "\017\00310"
 
-    #fsong = f_s + "♪⟪ "
-    fsong = f_s + "♪ "
+
+    #fsong = st.f_s + "♪⟪ "
+    fsong = st.f_s + "♪ "
+
     if 'title' in csong:
-        fsong += "\"%s%s%s\"" % (hl_s, csong['title'], hl_e)
+
+        fsong += '"%s%s%s"' % (st.hl_s, csong['title'], st.hl_e)
+
         if 'album' in csong:
             if ('artist' in csong) and (('albumartist' not in csong) or (csong['artist'] != csong['albumartist'])):
-                fsong += " by %s%s%s" % (hl_s, prettyartist(csong['artist']), hl_e)
-            fsong += " on %s%s%s" % (und_s, csong['album'], und_e)
+                fsong += " by %s" % prettyartist(st, csong['artist'])
+
+            fsong += " on %s%s%s" % (st.und_s, csong['album'], st.und_e)
+
             if 'date' in csong:
-                fsong += " %s(%s)%s" % (hl_s, strfobj(csong['date']), hl_e)
+                fsong += " %s" % prettydate(st, csong['date'])
+
             if 'albumartist' in csong:
-                fsong += " by %s%s%s" % (hl_s, prettyartist(csong['albumartist']), hl_e)
+                fsong += " by %s" % prettyartist(st, csong['albumartist'])
+
         else:
             if 'date' in csong:
-                fsong += " %s(%s)%s" % (hl_s, strfobj(csong['date']), hl_e)
+                fsong += " %s" % prettydate(st, csong['date'])
+
             if 'artist' in csong:
-                fsong += " by %s%s%s" % (hl_s, prettyartist(csong['artist']), hl_e)
+                fsong += " by %s" % prettyartist(st, csong['artist'])
+
     else:
         fname = csong['file']
         sindex = fname.rfind('/')
-        fsong += hl_s
+
+        fsong += st.hl_s
+
         if sindex >= 0:
             fsong += fname[sindex+1:]
         else:
             fsong += fname
-        fsong += hl_e
-    #fsong += " ⟫" + f_e
-    fsong += f_e
+
+        fsong += st.hl_e
+
+    #fsong += " ⟫" + st.f_e
+    fsong += st.f_e
+
 
     print(fsong)
 
